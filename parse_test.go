@@ -24,10 +24,11 @@
 package idsrules
 
 import (
-	"github.com/stretchr/testify/assert"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSplitAt(t *testing.T) {
@@ -223,4 +224,17 @@ sid:2; rev:3; \
 	rules, err := ParseReader(reader)
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(rules))
+}
+
+func TestParseEnabledAndDisabled(t *testing.T) {
+	// From ET Open, Suricata 3.1 (ciarmy.rules).
+	buf := `alert ip [1.34.6.220,1.34.12.196,1.34.12.225,1.34.15.234,1.34.35.168,1.34.36.11,1.34.36.80,1.34.40.246,1.34.54.20,1.34.70.86,1.34.85.46,1.34.93.100,1.34.118.108,1.34.130.153,1.34.139.167,1.34.158.144,1.34.165.112,1.34.168.202,1.34.197.19,1.34.198.134,1.34.200.111,1.34.208.161,1.34.221.165,1.34.243.195,1.34.244.43,1.34.250.244,1.52.54.254,1.52.93.249,1.53.64.47,1.53.143.147,1.53.202.61,1.58.173.68,1.62.120.17,1.62.252.210,1.65.165.91,1.162.169.124,1.162.173.232,1.162.233.25,1.162.235.8,1.179.153.114,1.180.237.106,1.180.237.107,1.180.237.108,1.180.237.109,1.182.249.151,1.186.60.148,1.186.234.88,1.192.144.183,1.217.127.106,1.230.45.179] any -> $HOME_NET any (msg:"ET CINS Active Threat Intelligence Poor Reputation IP group 1"; reference:url,www.cinsscore.com; reference:url,www.networkcloaking.com/cins; threshold: type limit, track by_src, seconds 3600, count 1; classtype:misc-attack; sid:2403300; rev:3064;)`
+
+	rule, err := Parse(buf)
+	assert.Nil(t, err)
+	assert.True(t, rule.Enabled)
+
+	rule, err = Parse("#" + buf)
+	assert.Nil(t, err)
+	assert.False(t, rule.Enabled)
 }

@@ -122,6 +122,17 @@ func parseOption(rule string) (string, string, string, error) {
 func Parse(buf string) (Rule, error) {
 	rule := Rule{}
 
+	// Removing leading space.
+	buf = trimLeadingWhiteSpace(buf)
+
+	// Check enable/disable status.
+	if !strings.HasPrefix(buf, "#") {
+		rule.Enabled = true
+	} else {
+		buf = strings.TrimPrefix(buf, "#")
+		buf = trimLeadingWhiteSpace(buf)
+	}
+
 	action, rem := splitAt(buf, " ")
 	rule.Action = action
 	if len(rem) == 0 {

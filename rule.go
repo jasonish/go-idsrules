@@ -31,6 +31,8 @@ type RuleOption struct {
 
 // Rule is a struct representing an IDS rule.
 type Rule struct {
+	Enabled bool
+
 	// Header components.
 	Action     string `json:"action"`
 	Proto      string
