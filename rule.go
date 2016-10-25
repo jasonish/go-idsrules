@@ -41,11 +41,10 @@ type Rule struct {
 	DestPort   string
 
 	// List of options in order.
-	Options    []RuleOption
+	Options []RuleOption
 
 	// Some options are also pulled out for easy access.
-	Msg        string
-	Sid        uint64
-	Gid        uint64
+	Msg string
+	Sid uint64
+	Gid uint64
 }
-

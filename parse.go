@@ -24,11 +24,11 @@
 package idsrules
 
 import (
-	"strings"
-	"fmt"
-	"strconv"
-	"io"
 	"bufio"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
 )
 
 var errIncompleteRule = fmt.Errorf("incomplete rule")
@@ -39,8 +39,8 @@ func trimQuotes(buf string) string {
 	if buflen == 0 {
 		return buf
 	}
-	if buf[0:1] == "\"" && buf[buflen - 1:buflen] == "\"" {
-		return buf[1:buflen - 1]
+	if buf[0:1] == "\"" && buf[buflen-1:buflen] == "\"" {
+		return buf[1 : buflen-1]
 	}
 	return buf
 }
@@ -90,7 +90,7 @@ func parseOption(rule string) (string, string, string, error) {
 
 	option = rule[0:optend]
 
-	rule = rule[optend + 1:]
+	rule = rule[optend+1:]
 
 	if hasArg {
 		if len(rule) == 0 {
@@ -112,7 +112,7 @@ func parseOption(rule string) (string, string, string, error) {
 				fmt.Errorf("unterminated option argument")
 		}
 		arg = rule[:argend]
-		rule = rule[argend + 1:]
+		rule = rule[argend+1:]
 	}
 
 	return option, trimQuotes(arg), rule, nil
@@ -170,7 +170,7 @@ func Parse(buf string) (Rule, error) {
 	offset := 0
 
 	// Check that then next char is a (.
-	if (rem[offset:offset + 1] != "(") {
+	if rem[offset:offset+1] != "(" {
 		return rule, fmt.Errorf("expected (, got %s", rem[0:1])
 	}
 	offset++
@@ -243,7 +243,7 @@ func ParseReader(reader io.Reader) ([]Rule, error) {
 
 			if strings.HasSuffix(line, "\\") {
 				buffered = fmt.Sprintf("%s %s",
-					buffered, line[0:len(line) - 1])
+					buffered, line[0:len(line)-1])
 			} else {
 				buffered = fmt.Sprintf("%s %s", buffered, line)
 				rule, err := Parse(strings.TrimSpace(buffered))
