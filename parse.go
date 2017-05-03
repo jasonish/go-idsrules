@@ -58,7 +58,7 @@ func trimQuotes(buf string) string {
 		return buf
 	}
 	if buf[0:1] == "\"" && buf[buflen-1:buflen] == "\"" {
-		return buf[1 : buflen-1]
+		return buf[1: buflen-1]
 	}
 	return buf
 }
@@ -255,39 +255,19 @@ func Parse(buf string) (Rule, error) {
 
 // ParseReader parses multiple rules from a reader.
 func ParseReader(reader io.Reader) ([]Rule, error) {
-
-	br := bufio.NewReader(reader)
-
 	rules := make([]Rule, 0)
 
-	buffered := ""
+	ruleReader := NewRuleReader(reader)
 
 	for {
-		bytes, err := br.ReadBytes('\n')
-		if err != nil && err != io.EOF {
-			return nil, err
-		}
-
-		if len(bytes) > 0 {
-
-			line := strings.TrimSpace(string(bytes))
-
-			if strings.HasSuffix(line, "\\") {
-				buffered = fmt.Sprintf("%s %s",
-					buffered, line[0:len(line)-1])
-			} else {
-				buffered = fmt.Sprintf("%s %s", buffered, line)
-				rule, err := Parse(strings.TrimSpace(buffered))
-				if err == nil {
-					rules = append(rules, rule)
-				}
-				buffered = ""
+		rule, err := ruleReader.Next()
+		if err != nil {
+			if err == io.EOF {
+				break
 			}
+			continue
 		}
-
-		if err != nil && err == io.EOF {
-			break
-		}
+		rules = append(rules, rule)
 	}
 
 	return rules, nil
@@ -317,18 +297,14 @@ func (r *RuleReader) readLine() (string, error) {
 // Next returns the next rule read from the reader. Empty lines and commented
 // out lines are skipped. Any other line that doesn't parse as a rule is
 // considered an error.
-func (r *RuleReader) Next() (rule Rule, err error) {
+func (r *RuleReader) Next() (Rule, error) {
 
 	ruleString := ""
 
 	for {
 		line, err := r.readLine()
 		if err != nil && line == "" {
-			return rule, err
-		}
-
-		if strings.HasPrefix(line, "#") {
-			continue
+			return Rule{}, err
 		}
 
 		if len(line) == 0 {
@@ -343,7 +319,16 @@ func (r *RuleReader) Next() (rule Rule, err error) {
 
 		ruleString = fmt.Sprintf("%s%s", ruleString, line)
 
-		return Parse(ruleString)
+		rule, err := Parse(ruleString)
+		if err != nil {
+			if strings.HasPrefix(ruleString, "#") {
+				ruleString = ""
+				continue
+			}
+			return Rule{}, err
+		}
+		ruleString = ""
+		return rule, err
 	}
 
 }
