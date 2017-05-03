@@ -29,6 +29,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"io"
 )
 
 func TestSplitAt(t *testing.T) {
@@ -91,6 +92,7 @@ func TestValidRules(t *testing.T) {
 			t.Errorf("invalid action, expected |%s|, got |%s|",
 				test.output.Action, rule.Action)
 		}
+		assert.Equal(t, test.input, rule.Raw)
 		assert.Equal(t, test.output.SourceAddr, rule.SourceAddr)
 		assert.Equal(t, test.output.SourcePort, rule.SourcePort)
 		assert.Equal(t, test.output.DestAddr, rule.DestAddr)
@@ -237,4 +239,26 @@ func TestParseEnabledAndDisabled(t *testing.T) {
 	rule, err = Parse("#" + buf)
 	assert.Nil(t, err)
 	assert.False(t, rule.Enabled)
+}
+
+func TestRuleReader_CommentsAndBlanks(t *testing.T) {
+	buf := `# Some comments
+
+# and some blank lines.`
+	reader := NewRuleReader(strings.NewReader(buf))
+	rule, err := reader.Next()
+	// Should get an empty rule.
+	assert.Equal(t, Rule{}, rule)
+
+	// And the only error should be EOF.
+	assert.Equal(t, io.EOF, err)
+}
+
+func TestRuleReader_Multiline(t *testing.T) {
+	buf := `alert tcp $EXTERNAL_NET $HTTP_PORTS \
+-> $HOME_NET any (msg:"ET \
+ACTIVEX Possible NOS Microsystems Adobe Reader/Acrobat getPlus Get_atlcomHelper ActiveX Control Multiple Stack Overflows Remote Code Execution Attempt"; flow:established,to_client; content:"E2883E8F-472F-4fb0-9522-AC9BF37916A7"; nocase; content:"offer-"; nocase; pcre:"/<OBJECT\s+[^>]*classid\s*=\s*[\x22\x27]?\s*clsid\s*\x3a\s*\x7B?\s*E2883E8F-472F-4fb0-9522-AC9BF37916A7.+offer-(ineligible|preinstalled|declined|accepted)/si"; reference:url,www.securityfocus.com/bid/37759; reference:url,www.kb.cert.org/vuls/id/773545; reference:url,www.adobe.com/support/security/bulletins/apsb10-02.html; reference:url,www.exploit-db.com/exploits/11172/; reference:cve,2009-3958; reference:url,doc.emergingthreats.net/2010665; classtype:attempted-user; sid:2010665; rev:7;)`
+	reader := NewRuleReader(strings.NewReader(buf))
+	rule, _ := reader.Next()
+	assert.Equal(t, "ET ACTIVEX Possible NOS Microsystems Adobe Reader/Acrobat getPlus Get_atlcomHelper ActiveX Control Multiple Stack Overflows Remote Code Execution Attempt", rule.Msg)
 }

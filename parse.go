@@ -31,7 +31,25 @@ import (
 	"strings"
 )
 
-var errIncompleteRule = fmt.Errorf("incomplete rule")
+// RuleParseError is the error returned when a parsing error occurs.
+type RuleParseError struct {
+	// The rule that failed to parse.
+	Rule string
+
+	// Some message describing the parse error.
+	Message string
+}
+
+func (e *RuleParseError) Error() string {
+	return fmt.Sprintf("%s: %s", e.Message, e.Rule)
+}
+
+func newIcompleteRuleError(rule string) *RuleParseError {
+	return &RuleParseError{
+		Rule:    rule,
+		Message: "incomplete",
+	}
+}
 
 // Remove leading and trailing quotes from a string.
 func trimQuotes(buf string) string {
@@ -120,7 +138,9 @@ func parseOption(rule string) (string, string, string, error) {
 
 // Parse an IDS rule from the provided string buffer.
 func Parse(buf string) (Rule, error) {
-	rule := Rule{}
+	rule := Rule{
+		Raw: buf,
+	}
 
 	// Removing leading space.
 	buf = trimLeadingWhiteSpace(buf)
@@ -136,25 +156,25 @@ func Parse(buf string) (Rule, error) {
 	action, rem := splitAt(buf, " ")
 	rule.Action = action
 	if len(rem) == 0 {
-		return rule, errIncompleteRule
+		return rule, newIcompleteRuleError(buf)
 	}
 
 	proto, rem := splitAt(rem, " ")
 	rule.Proto = proto
 	if len(rem) == 0 {
-		return rule, errIncompleteRule
+		return rule, newIcompleteRuleError(buf)
 	}
 
 	sourceAddr, rem := splitAt(rem, " ")
 	rule.SourceAddr = sourceAddr
 	if len(rem) == 0 {
-		return rule, errIncompleteRule
+		return rule, newIcompleteRuleError(buf)
 	}
 
 	sourcePort, rem := splitAt(rem, " ")
 	rule.SourcePort = sourcePort
 	if len(rem) == 0 {
-		return rule, errIncompleteRule
+		return rule, newIcompleteRuleError(buf)
 	}
 
 	direction, rem := splitAt(rem, " ")
@@ -163,19 +183,19 @@ func Parse(buf string) (Rule, error) {
 	}
 	rule.Direction = direction
 	if len(rem) == 0 {
-		return rule, errIncompleteRule
+		return rule, newIcompleteRuleError(buf)
 	}
 
 	destAddr, rem := splitAt(rem, " ")
 	rule.DestAddr = destAddr
 	if len(rem) == 0 {
-		return rule, errIncompleteRule
+		return rule, newIcompleteRuleError(buf)
 	}
 
 	destPort, rem := splitAt(rem, " ")
 	rule.DestPort = destPort
 	if len(rem) == 0 {
-		return rule, errIncompleteRule
+		return rule, newIcompleteRuleError(buf)
 	}
 
 	offset := 0
@@ -194,7 +214,7 @@ func Parse(buf string) (Rule, error) {
 	var err error
 	for {
 		if len(buf) == 0 {
-			return rule, errIncompleteRule
+			return rule, newIcompleteRuleError(buf)
 		}
 
 		buf = trimLeadingWhiteSpace(buf)
@@ -271,4 +291,59 @@ func ParseReader(reader io.Reader) ([]Rule, error) {
 	}
 
 	return rules, nil
+}
+
+// RuleReader parses rules one by from an underlying reader.
+type RuleReader struct {
+	reader *bufio.Reader
+}
+
+// NewRuleReader creates a new RuleReader reading from a reader.
+func NewRuleReader(reader io.Reader) *RuleReader {
+	ruleReader := &RuleReader{
+		reader: bufio.NewReader(reader),
+	}
+	return ruleReader
+}
+
+func (r *RuleReader) readLine() (string, error) {
+	bytes, err := r.reader.ReadBytes('\n')
+	if err != nil && len(bytes) == 0 {
+		return "", err
+	}
+	return strings.TrimSpace(string(bytes)), nil
+}
+
+// Next returns the next rule read from the reader. Empty lines and commented
+// out lines are skipped. Any other line that doesn't parse as a rule is
+// considered an error.
+func (r *RuleReader) Next() (rule Rule, err error) {
+
+	ruleString := ""
+
+	for {
+		line, err := r.readLine()
+		if err != nil && line == "" {
+			return rule, err
+		}
+
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		if len(line) == 0 {
+			continue
+		}
+
+		if strings.HasSuffix(line, "\\") {
+			ruleString = fmt.Sprintf("%s%s",
+				ruleString, line[0:len(line)-1])
+			continue
+		}
+
+		ruleString = fmt.Sprintf("%s%s", ruleString, line)
+
+		return Parse(ruleString)
+	}
+
 }
