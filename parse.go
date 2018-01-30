@@ -31,24 +31,8 @@ import (
 	"strings"
 )
 
-// RuleParseError is the error returned when a parsing error occurs.
-type RuleParseError struct {
-	// The rule that failed to parse.
-	Rule string
-
-	// Some message describing the parse error.
-	Message string
-}
-
-func (e *RuleParseError) Error() string {
-	return fmt.Sprintf("%s: %s", e.Message, e.Rule)
-}
-
-func newIcompleteRuleError(rule string) *RuleParseError {
-	return &RuleParseError{
-		Rule:    rule,
-		Message: "incomplete",
-	}
+func newIncompleteRuleError() error {
+	return fmt.Errorf("incomplete")
 }
 
 // Remove leading and trailing quotes from a string.
@@ -156,25 +140,25 @@ func Parse(buf string) (Rule, error) {
 	action, rem := splitAt(buf, " ")
 	rule.Action = action
 	if len(rem) == 0 {
-		return rule, newIcompleteRuleError(buf)
+		return rule, newIncompleteRuleError()
 	}
 
 	proto, rem := splitAt(rem, " ")
 	rule.Proto = proto
 	if len(rem) == 0 {
-		return rule, newIcompleteRuleError(buf)
+		return rule, newIncompleteRuleError()
 	}
 
 	sourceAddr, rem := splitAt(rem, " ")
 	rule.SourceAddr = sourceAddr
 	if len(rem) == 0 {
-		return rule, newIcompleteRuleError(buf)
+		return rule, newIncompleteRuleError()
 	}
 
 	sourcePort, rem := splitAt(rem, " ")
 	rule.SourcePort = sourcePort
 	if len(rem) == 0 {
-		return rule, newIcompleteRuleError(buf)
+		return rule, newIncompleteRuleError()
 	}
 
 	direction, rem := splitAt(rem, " ")
@@ -183,19 +167,19 @@ func Parse(buf string) (Rule, error) {
 	}
 	rule.Direction = direction
 	if len(rem) == 0 {
-		return rule, newIcompleteRuleError(buf)
+		return rule, newIncompleteRuleError()
 	}
 
 	destAddr, rem := splitAt(rem, " ")
 	rule.DestAddr = destAddr
 	if len(rem) == 0 {
-		return rule, newIcompleteRuleError(buf)
+		return rule, newIncompleteRuleError()
 	}
 
 	destPort, rem := splitAt(rem, " ")
 	rule.DestPort = destPort
 	if len(rem) == 0 {
-		return rule, newIcompleteRuleError(buf)
+		return rule, newIncompleteRuleError()
 	}
 
 	offset := 0
@@ -214,7 +198,7 @@ func Parse(buf string) (Rule, error) {
 	var err error
 	for {
 		if len(buf) == 0 {
-			return rule, newIcompleteRuleError(buf)
+			return rule, newIncompleteRuleError()
 		}
 
 		buf = trimLeadingWhiteSpace(buf)
