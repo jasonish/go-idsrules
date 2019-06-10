@@ -281,14 +281,14 @@ func (r *RuleReader) readLine() (string, error) {
 // Next returns the next rule read from the reader. Empty lines and commented
 // out lines are skipped. Any other line that doesn't parse as a rule is
 // considered an error.
-func (r *RuleReader) Next() (Rule, error) {
+func (r *RuleReader) Next() (*Rule, error) {
 
 	ruleString := ""
 
 	for {
 		line, err := r.readLine()
 		if err != nil && line == "" {
-			return Rule{}, err
+			return &Rule{}, err
 		}
 
 		if len(line) == 0 {
