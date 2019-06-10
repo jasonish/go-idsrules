@@ -121,8 +121,8 @@ func parseOption(rule string) (string, string, string, error) {
 }
 
 // Parse an IDS rule from the provided string buffer.
-func Parse(buf string) (Rule, error) {
-	rule := Rule{
+func Parse(buf string) (*Rule, error) {
+	rule := &Rule{
 		Raw: buf,
 	}
 
