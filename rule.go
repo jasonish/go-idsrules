@@ -32,24 +32,24 @@ type RuleOption struct {
 // Rule is a struct representing an IDS rule.
 type Rule struct {
 	// The raw rule string.
-	Raw string
+	Raw string `json:"raw"`
 
-	Enabled bool
+	Enabled bool `json:"enabled"`
 
 	// Header components.
-	Action     string
-	Proto      string
-	SourceAddr string
-	SourcePort string
-	Direction  string
-	DestAddr   string
-	DestPort   string
+	Action     string `json:"action"`
+	Proto      string `json:"proto"`
+	SourceAddr string `json:"source_addr"`
+	SourcePort string `json:"source_port"`
+	Direction  string `json:"direction"`
+	DestAddr   string `json:"destination_addr"`
+	DestPort   string `json:"destination_port"`
 
 	// List of options in order.
-	Options []RuleOption
+	Options []RuleOption `json:"options"`
 
 	// Some options are also pulled out for easy access.
-	Msg string
-	Sid uint64
-	Gid uint64
+	Msg string `json:"msg"`
+	Sid uint64 `json:"sid"`
+	Gid uint64 `json:"gid"`
 }
