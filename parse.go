@@ -309,7 +309,7 @@ func (r *RuleReader) Next() (*Rule, error) {
 				ruleString = ""
 				continue
 			}
-			return Rule{}, err
+			return &Rule{}, err
 		}
 		ruleString = ""
 		return rule, err
