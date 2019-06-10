@@ -238,8 +238,8 @@ func Parse(buf string) (*Rule, error) {
 }
 
 // ParseReader parses multiple rules from a reader.
-func ParseReader(reader io.Reader) ([]Rule, error) {
-	rules := make([]Rule, 0)
+func ParseReader(reader io.Reader) ([]*Rule, error) {
+	rules := make([]*Rule, 0)
 
 	ruleReader := NewRuleReader(reader)
 
